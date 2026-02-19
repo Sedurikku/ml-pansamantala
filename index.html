@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>ML Pansamantala</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+      color: white;
+      font-family: "Poppins", sans-serif;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      border: 3px solid #00ffcc;
+      border-radius: 10px;
+      box-shadow: 0 0 20px #00ffcc;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    let ball;
+    let paddle;
+    let bricks = [];
+    let rows = 5;
+    let cols = 8;
+    let brickW, brickH;
+    let score = 0;
+    let gameOver = false;
+
+    function setup() {
+      createCanvas(800, 600);
+      ball = new Ball();
+      paddle = new Paddle();
+      brickW = width / cols;
+      brickH = 25;
+      createBricks();
+    }
+
+    function draw() {
+      background(20);
+
+      if (!gameOver) {
+        ball.move();
+        ball.bounceEdges();
+        ball.show();
+        paddle.show();
+        paddle.move();
+
+        for (let b of bricks) {
+          b.show();
+        }
+
+        checkCollision();
+        textSize(18);
+        fill(255);
+        text("Score: " + score, 20, 30);
+      } else {
+        textAlign(CENTER, CENTER);
+        textSize(40);
+        fill("#00ffcc");
+        text("ML Pansamantala", width / 2, height / 2 - 60);
+        textSize(25);
+        fill(255);
+        text("Game Over! Final Score: " + score, width / 2, height / 2);
+        text("Press R to Restart", width / 2, height / 2 + 60);
+      }
+    }
+
+    function keyPressed() {
+      if (keyCode === LEFT_ARROW) {
+        paddle.moveDir = -1;
+      } else if (keyCode === RIGHT_ARROW) {
+        paddle.moveDir = 1;
+      } else if (key === 'r' || key === 'R') {
+        resetGame();
+      }
+    }
+
+    function keyReleased() {
+      paddle.moveDir = 0;
+    }
+
+    class Ball {
+      constructor() {
+        this.r = 12;
+        this.x = width / 2;
+        this.y = height / 2;
+        this.xspeed = 4;
+        this.yspeed = 5;
+      }
+      move() {
+        this.x += this.xspeed;
+        this.y += this.yspeed;
+      }
+      bounceEdges() {
+        if (this.x < 0 || this.x > width) this.xspeed *= -1;
+        if (this.y < 0) this.yspeed *= -1;
+        if (this.y > height) gameOver = true;
+      }
+      show() {
+        fill("#00ffcc");
+        noStroke();
+        ellipse(this.x, this.y, this.r * 2);
+      }
+    }
+
+    class Paddle {
+      constructor() {
+        this.w = 120;
+        this.h = 15;
+        this.x = width / 2 - this.w / 2;
+        this.y = height - 40;
+        this.speed = 7;
+        this.moveDir = 0;
+      }
+      move() {
+        this.x += this.moveDir * this.speed;
+        this.x = constrain(this.x, 0, width - this.w);
+      }
+      show() {
+        fill("#00ffcc");
+        rect(this.x, this.y, this.w, this.h, 10);
+      }
+    }
+
+    class Brick {
+      constructor(x, y, w, h, c) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.color = c;
+        this.alive = true;
+      }
+      show() {
+        if (this.alive) {
+          fill(this.color);
+          rect(this.x, this.y, this.w - 3, this.h - 3, 5);
+        }
+      }
+    }
+
+    function createBricks() {
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          let x = c * brickW;
+          let y = r * brickH + 40;
+          let color = colorRandom();
+          bricks.push(new Brick(x, y, brickW, brickH, color));
+        }
+      }
+    }
+
+    function colorRandom() {
+      return color(random(100, 255), random(100, 255), random(100, 255));
+    }
+
+    function checkCollision() {
+      // Paddle collision
+      if (
+        ball.y + ball.r > paddle.y &&
+        ball.x > paddle.x &&
+        ball.x < paddle.x + paddle.w
+      ) {
+        ball.yspeed *= -1;
+      }
+
+      // Brick collision
+      for (let b of bricks) {
+        if (b.alive) {
+          if (
+            ball.x > b.x &&
+            ball.x < b.x + b.w &&
+            ball.y - ball.r < b.y + b.h &&
+            ball.y + ball.r > b.y
+          ) {
+            b.alive = false;
+            ball.yspeed *= -1;
+            score += 10;
+          }
+        }
+      }
+    }
+
+    function resetGame() {
+      score = 0;
+      gameOver = false;
+      ball = new Ball();
+      paddle = new Paddle();
+      bricks = [];
+      createBricks();
+    }
+  </script>
+</body>
+</html>
